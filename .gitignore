@@ -1,0 +1,10 @@
+# try to ignore key and certificate files
+*.key
+*.pem
+*.crt
+*.p12
+*.x509
+#
+keys/*
+# Vagrant files
+.vagrant/*
