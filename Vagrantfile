@@ -32,4 +32,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   config.vm.provision 'shell', inline: 'echo OHAI'
+  config.vm.provision 'shell', inline: 'sudo yum -y install docker'
+  config.vm.provision 'shell', inline: 'sudo systemctl start docker'
+  config.vm.provision "docker" do |d|
+    d.pull_images "timrobinson/tmr-nodejs"
+    d.pull_images "mongo"
+  end
+  config.vm.provision "docker" do |d|
+    d.run "db", image: "mongo"
+    d.run "web", image: "timrobinson/tmr-nodejs", args: "-p 8000:8000"
+  end
 end
