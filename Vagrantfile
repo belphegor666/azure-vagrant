@@ -31,15 +31,35 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     azure.tcp_endpoints = '8000'
   end
 
-  config.vm.provision 'shell', inline: 'echo OHAI'
-  config.vm.provision 'shell', inline: 'sudo yum -y install docker'
-  config.vm.provision 'shell', inline: 'sudo systemctl start docker'
+  config.vm.provision 'shell', name: 'TEST' , inline: 'echo OHAI'
+  config.vm.provision 'shell', name: 'PROVISION DOCKER ENGINE' , inline: 'sudo yum -y install docker'
+  config.vm.provision 'shell', name: 'START DOCKER DAEMON' , inline: 'sudo systemctl start docker'
+  if ENV['DOCKER_USER'].nil?
+    puts 'DOCKER_USER environment variable is not defined!'
+    exit 1
+  end
+  if ENV['DOCKER_PASSWORD'].nil?
+    puts 'DOCKER_PASSWORD environment variable is not defined!'
+    exit 1
+  end
+  if ENV['DOCKER_REGISTRY'].nil?
+    puts 'DOCKER_REGISTRY environment variable is not defined!'
+    exit 1
+  end 
+
+  config.vm.provision "shell" do |s|
+    s.name = "LOGIN TO PRIVATE DOCKER REGISTRY"
+    s.inline = "docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD} $DOCKER_REGISTRY"
+    s.env = {"DOCKER_USER" => ENV['DOCKER_USER'], "DOCKER_PASSWORD" => ENV['DOCKER_PASSWORD'], "DOCKER_REGISTRY" => ENV['DOCKER_REGISTRY']}
+  end
+#
+
   config.vm.provision "docker" do |d|
-    d.pull_images "timrobinson/tmr-nodejs"
-    d.pull_images "mongo"
+    d.pull_images ENV['DOCKER_REGISTRY']+"/tmr-nodejs"
+    d.pull_images ENV['DOCKER_REGISTRY']+"/mongo"
   end
   config.vm.provision "docker" do |d|
-    d.run "db", image: "mongo"
-    d.run "web", image: "timrobinson/tmr-nodejs", args: "-p 8000:8000"
+    d.run "db", image: ENV['DOCKER_REGISTRY']+"/mongo"
+    d.run "web", image: ENV['DOCKER_REGISTRY']+"/tmr-nodejs", args: "-p 8000:8000"
   end
 end
